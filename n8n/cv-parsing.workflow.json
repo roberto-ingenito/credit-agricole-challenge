@@ -9,13 +9,13 @@
           "rawBody": true
         }
       },
-      "id": "73686bdb-ec9a-4c35-8a73-e0f99c4ddc18",
+      "id": "b9a1a060-a650-43ef-adf8-ccceeadd6fe0",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -864,
-        32
+        -2464,
+        -32
       ],
       "webhookId": "smart-recruit-cv-upload"
     },
@@ -31,13 +31,13 @@
           ]
         }
       },
-      "id": "1274fcf9-1560-40e2-92eb-1a2ec1112679",
+      "id": "33c1a3d3-3f88-4d83-85b6-470371b5d8a5",
       "name": "Validate Input",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -640,
-        32
+        -2240,
+        -32
       ]
     },
     {
@@ -48,13 +48,13 @@
           "responseCode": 400
         }
       },
-      "id": "d14964ee-b343-4b33-ab88-7e6f4fbde13f",
+      "id": "7a6822be-d7e3-44b2-ad65-2b4575767d4d",
       "name": "Response Error - Validation",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -416,
-        208
+        -2016,
+        144
       ]
     },
     {
@@ -63,26 +63,26 @@
         "binaryPropertyName": "file",
         "options": {}
       },
-      "id": "fc1c5b42-e858-422e-91c8-34a9a6c17bf8",
+      "id": "76c3432b-2878-425a-96f3-c33efd34d9e0",
       "name": "Extract PDF Text",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        -416,
-        -160
+        -2016,
+        -224
       ]
     },
     {
       "parameters": {
         "jsCode": "const extractedText = items[0].json.text || '';\nconst candidateEmail = items[0].json.body?.candidate_email || 'unknown@email.com';\nconst filename = items[0].binary?.file?.fileName || 'cv.pdf';\n\nconst prompt = `# RUOLO\nSei un esperto AI specializzato nell'estrazione strutturata di informazioni da CV italiani e internazionali.\n\n# TASK\nAnalizza il seguente CV e estrai tutte le informazioni rilevanti in formato JSON strutturato.\n\n# ISTRUZIONI CRITICHE\n1. Estrai SOLO informazioni esplicitamente presenti nel testo\n2. Non inventare o inferire dati mancanti - usa null se un campo non è presente\n3. Per date ambigue, usa il formato \"YYYY-MM\" o \"YYYY\"\n4. Classifica le skill tecniche per categoria: programming_language, framework, database, tool, cloud, other\n5. Assegna proficiency (beginner/intermediate/advanced/expert) basandoti su: anni esperienza, ruoli, progetti\n6. Estrai sia hard skills che soft skills\n7. Calcola years_total_experience sommando tutte le esperienze lavorative\n8. Per education_level usa: high_school, bachelor, master, phd\n\n# SCHEMA JSON RICHIESTO (RISPETTA ESATTAMENTE QUESTA STRUTTURA)\n{\n  \"personal_info\": {\n    \"full_name\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string o null\",\n    \"location\": {\n      \"city\": \"string o null\",\n      \"country\": \"string o null\"\n    },\n    \"linkedin\": \"string o null\",\n    \"github\": \"string o null\",\n    \"portfolio\": \"string o null\"\n  },\n  \"summary\": \"stringa descrittiva del profilo (max 200 parole)\",\n  \"skills\": {\n    \"technical\": [\n      {\n        \"name\": \"string\",\n        \"category\": \"programming_language|framework|database|tool|cloud|other\",\n        \"proficiency\": \"beginner|intermediate|advanced|expert\",\n        \"years_experience\": \"numero o null\"\n      }\n    ],\n    \"soft_skills\": [\"array di stringhe\"],\n    \"languages\": [\n      {\n        \"language\": \"string\",\n        \"level\": \"A1|A2|B1|B2|C1|C2|native\"\n      }\n    ]\n  },\n  \"experience\": [\n    {\n      \"company\": \"string\",\n      \"role\": \"string\",\n      \"start_date\": \"YYYY-MM o YYYY\",\n      \"end_date\": \"YYYY-MM o YYYY o present\",\n      \"duration_months\": \"numero calcolato o null\",\n      \"description\": \"string\",\n      \"key_achievements\": [\"array di stringhe\"],\n      \"technologies\": [\"array di stringhe\"]\n    }\n  ],\n  \"education\": [\n    {\n      \"degree\": \"string\",\n      \"institution\": \"string\",\n      \"start_date\": \"YYYY-MM o YYYY o null\",\n      \"end_date\": \"YYYY-MM o YYYY o null\",\n      \"grade\": \"string o null\",\n      \"thesis\": \"string o null\"\n    }\n  ],\n  \"certifications\": [\n    {\n      \"name\": \"string\",\n      \"issuer\": \"string\",\n      \"date\": \"YYYY-MM o YYYY\",\n      \"credential_id\": \"string o null\"\n    }\n  ],\n  \"projects\": [\n    {\n      \"name\": \"string\",\n      \"description\": \"string\",\n      \"technologies\": [\"array\"],\n      \"url\": \"string o null\"\n    }\n  ],\n  \"extracted_scores\": {\n    \"years_total_experience\": \"numero\",\n    \"education_level\": \"high_school|bachelor|master|phd\",\n    \"n_certifications\": \"numero\",\n    \"n_projects\": \"numero\"\n  }\n}\n\n# TESTO DEL CV DA ANALIZZARE\n${extractedText}\n\n# OUTPUT RICHIESTO\nFornisci ESCLUSIVAMENTE il JSON valido, senza markdown, senza commenti, senza testo aggiuntivo prima o dopo.\nInizia direttamente con { e termina con }`;\n\nreturn [{\n  json: {\n    prompt: prompt,\n    candidate_email: candidateEmail,\n    filename: filename,\n    extracted_text_preview: extractedText.substring(0, 500)\n  }\n}];"
       },
-      "id": "126cbe6c-a612-4512-b918-41ee4996de4b",
+      "id": "1c49a1d5-d25b-4281-8397-5190f24840ec",
       "name": "Prepare LLM Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -192,
-        -160
+        -1792,
+        -224
       ]
     },
     {
@@ -112,21 +112,19 @@
             },
             {
               "name": "options",
-              "value": "={{ {\"temperature\": 0.1, \"num_predict\": 4096} }}"
+              "value": "={{ {\"temperature\": 0.1, \"num_predict\": 16384, \"num_ctx\": 8192} }}"
             }
           ]
         },
-        "options": {
-          "timeout": 120000
-        }
+        "options": {}
       },
-      "id": "9fafa60f-d6bd-4d7f-912a-a7bbed078d15",
+      "id": "a4c8ba01-a1d9-4893-bbde-202472318600",
       "name": "Ollama LLM Call",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        32,
-        -160
+        -1568,
+        -224
       ],
       "credentials": {
         "httpBasicAuth": {
@@ -139,13 +137,13 @@
       "parameters": {
         "jsCode": "try {\n  // Accedi all'item corrente\n  const ollamaResponse = $input.item.json.response;\n\n  // Verifica che response esista\n  if (!ollamaResponse) {\n    return {\n      success: false,\n      error: 'Response field is missing from Ollama output',\n      timestamp: new Date().toISOString()\n    };\n  }\n\n  // Se response è già un oggetto, non serve fare il parse\n  let extracted;\n  if (typeof ollamaResponse === 'string') {\n    // Cerca JSON nel testo\n    const jsonMatch = ollamaResponse.match(/\\{[\\s\\S]*\\}/);\n    if (!jsonMatch) {\n      return {\n        success: false,\n        error: 'No JSON found in Ollama response',\n        raw_response: ollamaResponse.substring(0, 200),\n        timestamp: new Date().toISOString()\n      };\n    }\n    extracted = JSON.parse(jsonMatch[0]);\n  } else {\n    // È già un oggetto\n    extracted = ollamaResponse;\n  }\n\n  // Prepara keywords per la ricerca\n  const searchKeywords = [\n    extracted.role || '',\n    ...(extracted.primary_skills || []),\n    ...(extracted.secondary_skills || [])\n  ].filter(k => k).join(' ');\n\n  return {\n    success: true,\n    original_query: $input.item.json.body?.query,\n    extracted_criteria: extracted,\n    search_keywords: searchKeywords,\n    timestamp: new Date().toISOString()\n  };\n\n} catch (error) {\n  return {\n    success: false,\n    error: error.message,\n    error_type: error.name,\n    timestamp: new Date().toISOString()\n  };\n}"
       },
-      "id": "cdeee50c-3fc4-48f0-b95e-9647fc0cd820",
+      "id": "9fb99a9e-1484-4471-9a48-afb9e7d3b551",
       "name": "Parse and Validate JSON",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        256,
-        -160
+        -1312,
+        -224
       ]
     },
     {
@@ -159,13 +157,13 @@
           ]
         }
       },
-      "id": "e5cf7f2d-7baf-43d7-929a-5632733098eb",
+      "id": "a5e18e6d-5773-47e3-94a3-6501fdbaae5b",
       "name": "Check Parsing Success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        672,
-        -160
+        -1072,
+        -224
       ]
     },
     {
@@ -176,13 +174,13 @@
           "responseCode": 422
         }
       },
-      "id": "e4206955-9bec-42b4-a7cb-68f876a7ed48",
+      "id": "01c7a92c-900f-4cb9-91b3-daccd0403a79",
       "name": "Response Error - Parsing",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1312,
-        32
+        -816,
+        -64
       ],
       "disabled": true
     },
@@ -190,18 +188,18 @@
       "parameters": {
         "operation": "insert",
         "collection": "candidates",
-        "fields": "personal_info,skills",
+        "fields": "={{ Object.keys($json).join(',') }}",
         "options": {
           "dateFields": ""
         }
       },
-      "id": "af375ee8-03f8-4477-b4d1-3d77744b645a",
+      "id": "ac5050e9-a918-4990-bd1b-d12e605974dd",
       "name": "MongoDB Insert",
       "type": "n8n-nodes-base.mongoDb",
       "typeVersion": 1,
       "position": [
-        1312,
-        -160
+        -480,
+        -352
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -213,15 +211,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const insertedDoc = items[0].json;\nconst candidateId = insertedDoc._id || insertedDoc.insertedId;\nconst parsedCV = items[0].json.parsed_cv || {};\n\nreturn [{\n  json: {\n    success: true,\n    message: \"CV analizzato e salvato con successo\",\n    candidate_id: candidateId,\n    extracted_data: {\n      name: parsedCV.personal_info?.full_name,\n      email: parsedCV.personal_info?.email,\n      skills_count: parsedCV.skills?.technical?.length || 0,\n      experience_years: parsedCV.extracted_scores?.years_total_experience || 0,\n      certifications: parsedCV.extracted_scores?.n_certifications || 0\n    },\n    next_steps: [\n      \"Completa il micro-task tecnico\",\n      \"Collega i tuoi profili GitHub/LinkedIn (opzionale)\",\n      \"Attendi il matching con le posizioni aperte\"\n    ]\n  }\n}];"
+        "jsCode": "const insertedDoc = items[0].json;\nconst candidateId = insertedDoc._id || insertedDoc.insertedId;\n\nreturn [{\n  json: {\n    success: true,\n    message: \"curriculum analyzed\",\n    candidate_id: candidateId,\n  }\n}];"
       },
-      "id": "9f12d4de-0994-4609-9bd9-f5eb8ce44b6e",
+      "id": "21b31639-b1a5-4c13-83df-dacf3a9d6339",
       "name": "Prepare Success Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1536,
-        -160
+        -208,
+        -352
       ]
     },
     {
@@ -232,56 +230,27 @@
           "responseCode": 201
         }
       },
-      "id": "68fb8ff8-2b4a-4834-8e67-dfb3dfff884d",
+      "id": "22f56e1e-9a5a-4112-875f-c311e99eaa22",
       "name": "Response Success",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1760,
-        -160
+        64,
+        -352
       ]
     },
     {
       "parameters": {
-        "operation": "insert",
-        "collection": "parsing_logs",
-        "fields": {
-          "timestamp": "={{$now}}",
-          "filename": "={{$json.filename}}",
-          "candidate_email": "={{$json.candidate_email}}",
-          "status": "={{$json.success ? 'success' : 'failed'}}",
-          "error": "={{$json.error}}",
-          "extracted_text_length": "={{$json.extracted_text_preview?.length || 0}}"
-        },
-        "options": {}
-      },
-      "id": "aa850405-2754-4190-a032-2a633a2a4000",
-      "name": "Log Parsing Attempt",
-      "type": "n8n-nodes-base.mongoDb",
-      "typeVersion": 1,
-      "position": [
-        672,
-        144
-      ],
-      "credentials": {
-        "mongoDb": {
-          "id": "wxTT5ALvByn25y7M",
-          "name": "MongoDB account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n// for (const item of $input.all()) {\n//  item.json.myNewField = 1;\n//}\n\nreturn $input.first().json.extracted_criteria"
+        "jsCode": "return $input.first().json.extracted_criteria"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        880,
-        -256
+        -816,
+        -352
       ],
-      "id": "bec96b7f-dafc-4a3b-8988-488edbd3ef9a",
-      "name": "Code in JavaScript"
+      "id": "bf5eeaf8-b546-4eaa-af47-75de4651880b",
+      "name": "Get only extracted criteria"
     }
   ],
   "connections": {
@@ -351,11 +320,6 @@
       "main": [
         [
           {
-            "node": "Log Parsing Attempt",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Check Parsing Success",
             "type": "main",
             "index": 0
@@ -367,7 +331,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Get only extracted criteria",
             "type": "main",
             "index": 0
           }
@@ -403,7 +367,7 @@
         ]
       ]
     },
-    "Code in JavaScript": {
+    "Get only extracted criteria": {
       "main": [
         [
           {
