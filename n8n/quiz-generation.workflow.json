@@ -2,39 +2,6 @@
   "nodes": [
     {
       "parameters": {
-        "batching": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.7,
-      "position": [
-        1456,
-        192
-      ],
-      "id": "a4455a73-6032-4649-83f8-3d98bce1d04e",
-      "name": "Basic LLM Chain1"
-    },
-    {
-      "parameters": {
-        "model": "gemma:2b",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        1456,
-        400
-      ],
-      "id": "17763af5-4b98-4b48-9ef2-e0e54f3c2fd0",
-      "name": "Ollama Chat Model1",
-      "credentials": {
-        "ollamaApi": {
-          "id": "3IXpw8CpyiClSDM9",
-          "name": "Ollama account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "httpMethod": "POST",
         "path": "quiz-generation",
         "responseMode": "lastNode",
@@ -44,84 +11,141 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        864,
-        192
+        -576,
+        -336
       ],
-      "id": "7f76c526-122b-47e7-a77d-5f58a13b191a",
+      "id": "1beb7d75-4840-411b-943b-5854e4cc2fe3",
       "name": "Webhook1",
       "webhookId": "2c4a4d86-e4f8-411f-9539-0bdfe1ef1844"
     },
     {
       "parameters": {
-        "jsCode": "const azienda = $json.body.azienda;\nconst job = $json.body.job_description;\nconst tipoQuiz = $json.body.tipo_quiz;\n\nconst chatInput = `\nCrea un quiz di tipo \"${tipoQuiz}\" per valutare candidati al ruolo di ${job.ruolo} (${job.livello})\nin ${azienda.nome}, un'azienda che opera nel settore ${azienda.settore}.\n\nDescrizione azienda:\n${azienda.descrizione}\n\nJob description:\n- Responsabilità principali: ${job.responsabilità.join(', ')}\n- Competenze richieste: ${job.competenze_richieste.join(', ')}\n\nIl quiz deve contenere 10 domande, ognuna con:\n- testo della domanda\n- 4 opzioni di risposta\n- una sola risposta corretta\n- livello di difficoltà da 1 a 10\n- punteggio consigliato\n\nRestituisci tutto in JSON nel formato:\n{\n  \"azienda\": \"${azienda.nome}\",\n  \"ruolo\": \"${job.ruolo}\",\n  \"tipo_quiz\": \"${tipoQuiz}\",\n  \"domande\": [...]\n}\n`;\n\nreturn [{ json: { chatInput } }];\n"
+        "jsCode": "const azienda = $json.body.azienda;\nconst job = $json.body.job_description;\nconst tipoQuiz = $json.body.tipo_quiz;\n\nconst chatInput = `Crea un quiz di tipo \"${tipoQuiz}\" per valutare candidati al ruolo di ${job.ruolo} (${job.livello}) in ${azienda.nome}, un'azienda che opera nel settore ${azienda.settore}.\n\nDescrizione azienda:\n${azienda.descrizione}\n\nJob description:\n- Responsabilità principali: ${job.responsabilità.join(', ')}\n- Competenze richieste: ${job.competenze_richieste.join(', ')}\n\nIl quiz deve contenere 10 domande, ognuna con:\n- testo della domanda\n- 4 opzioni di risposta\n- una sola risposta corretta\n- livello di difficoltà da 1 a 10\n- punteggio consigliato\n\nRestituisci tutto in JSON nel formato:\n{\n  \"azienda\": \"${azienda.nome}\",\n  \"ruolo\": \"${job.ruolo}\",\n  \"tipo_quiz\": \"${tipoQuiz}\",\n  \"domande\": [...]\n}\n`;\n\nreturn [{ json: { chatInput } }];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1184,
-        192
+        -256,
+        -336
       ],
-      "id": "5ccca89e-0328-442c-bab6-be73d08620d4",
+      "id": "6dc33c96-e2a6-4895-839c-fb4f094c8b12",
       "name": "Prompt Building"
     },
     {
       "parameters": {
         "operation": "insert",
         "collection": "quizzes",
+        "fields": "={{ Object.keys($json).join(',') }}",
         "options": {}
       },
       "type": "n8n-nodes-base.mongoDb",
       "typeVersion": 1.2,
       "position": [
-        2016,
-        192
+        576,
+        -336
       ],
-      "id": "a1bc0c5e-a2cb-4ea7-b886-23faf2dfeb37",
+      "id": "9f993c15-532c-499a-8350-7adf39cae4dc",
       "name": "Save quiz to db",
       "credentials": {
         "mongoDb": {
-          "id": "FLMHAXern0w0urtu",
+          "id": "wxTT5ALvByn25y7M",
           "name": "MongoDB account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "const text = $json.text || $json.output || '';\ntry {\n  const parsed = JSON.parse(text);\n  return [{ json: parsed }];\n} catch (e) {\n  return [{ json: { error: \"Invalid JSON from LLM\", raw: text } }];\n}\n"
+        "jsCode": "const text = $input.first().json.response || ''\ntry {\n  const parsed = JSON.parse(text);\n  return [{ json: parsed }];\n} catch (e) {\n  return [{ json: { error: \"Invalid JSON from LLM\", raw: text } }];\n}\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1808,
-        192
+        368,
+        -336
       ],
-      "id": "400e2b36-da87-40af-9aa4-ec0a62db8191",
+      "id": "35994276-8d4a-4b18-88c9-23425667ac9a",
       "name": "Quiz Parsing"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "qwen3:8b"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "stream",
+              "value": false
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "options",
+              "value": "={{ {\"temperature\": 0.1, \"num_predict\": 16384, \"num_ctx\": 8192} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e8986c2b-b6fb-4026-b957-d4695ae9d3e5",
+      "name": "Ollama LLM Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        48,
+        -336
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "F6rPQJKQix9aQq83",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const insertedDoc = items[0].json;\nconst quizId = insertedDoc._id || insertedDoc.insertedId;\n\nreturn [{\n  json: {\n    success: true,\n    message: \"quiz added\",\n    quiz_id: quizId,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -336
+      ],
+      "id": "e2dfcf57-bcfd-4554-84fc-9643b6336c95",
+      "name": "Prepare Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        992,
+        -336
+      ],
+      "id": "14ac41fa-d6ce-4164-8522-b30e260a91d5",
+      "name": "Response success"
     }
   ],
   "connections": {
-    "Basic LLM Chain1": {
-      "main": [
-        [
-          {
-            "node": "Quiz Parsing",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ollama Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Basic LLM Chain1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Webhook1": {
       "main": [
         [
@@ -137,7 +161,7 @@
       "main": [
         [
           {
-            "node": "Basic LLM Chain1",
+            "node": "Ollama LLM Call",
             "type": "main",
             "index": 0
           }
@@ -146,7 +170,13 @@
     },
     "Save quiz to db": {
       "main": [
-        []
+        [
+          {
+            "node": "Prepare Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Quiz Parsing": {
@@ -159,11 +189,33 @@
           }
         ]
       ]
+    },
+    "Ollama LLM Call": {
+      "main": [
+        [
+          {
+            "node": "Quiz Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response": {
+      "main": [
+        [
+          {
+            "node": "Response success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "6c4634464dbda3070448cff2b0e985ce939bdf3b02a7f18188b43757e5967dbc"
+    "instanceId": "0f41c741239e7d8454e734c25d98231620c3dc2b62c93f64cb7348d589308a36"
   }
 }
