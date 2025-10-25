@@ -1,116 +1,169 @@
 {
-  "name": "Quiz Generator & Saver",
   "nodes": [
     {
       "parameters": {
-        "path": "generate-quiz",
-        "methods": ["POST"]
+        "batching": {}
       },
-      "id": "WebhookNode",
-      "name": "HTTP Webhook - Receive Prompt",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [200, 300],
-      "webhookDescription": "Riceve il prompt e i dati del quiz"
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1456,
+        192
+      ],
+      "id": "a4455a73-6032-4649-83f8-3d98bce1d04e",
+      "name": "Basic LLM Chain1"
     },
     {
       "parameters": {
-        "functionCode": "return [{ json: { prompt: $json.body.prompt, tipo_quiz: $json.body.tipo_quiz, contesto: $json.body.contesto }}];"
+        "model": "gemma:2b",
+        "options": {}
       },
-      "id": "PreparePrompt",
-      "name": "Prepare Prompt",
-      "type": "n8n-nodes-base.function",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
-      "position": [400, 300]
-    },
-    {
-      "parameters": {
-        "url": "http://localhost:11434/api/generate",
-        "method": "POST",
-        "responseFormat": "json",
-        "jsonParameters": true,
-        "options": {},
-        "body": {
-          "model": "llama3",
-          "prompt": "{{$json[\"prompt\"]}}",
-          "stream": false
-        }
-      },
-      "id": "CallLocalAI",
-      "name": "Call Local AI (Ollama)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
-      "position": [600, 300]
-    },
-    {
-      "parameters": {
-        "functionCode": "// Assume che l'AI restituisca { response: '{...quiz JSON...}' }\nconst quiz = JSON.parse($json.response || '{}');\nreturn [{ json: quiz }];"
-      },
-      "id": "ParseQuiz",
-      "name": "Parse Quiz JSON",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [800, 300]
-    },
-    {
-      "parameters": {
-        "collection": "quiz",
-        "fields": "={{$json}}"
-      },
-      "id": "InsertMongo",
-      "name": "Insert into MongoDB",
-      "type": "n8n-nodes-base.mongoDb",
-      "typeVersion": 2,
-      "position": [1000, 300],
+      "position": [
+        1456,
+        400
+      ],
+      "id": "17763af5-4b98-4b48-9ef2-e0e54f3c2fd0",
+      "name": "Ollama Chat Model1",
       "credentials": {
-        "mongoDb": "MongoDB_Credentials"
+        "ollamaApi": {
+          "id": "3IXpw8CpyiClSDM9",
+          "name": "Ollama account"
+        }
       }
     },
     {
       "parameters": {
-        "responseMode": "onReceived",
-        "responseData": "={{$json}}",
-        "options": {
-          "responseContentType": "application/json"
-        }
+        "httpMethod": "POST",
+        "path": "quiz-generation",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
       },
-      "id": "ReturnResponse",
-      "name": "Return Quiz to Client",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1200, 300]
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        864,
+        192
+      ],
+      "id": "7f76c526-122b-47e7-a77d-5f58a13b191a",
+      "name": "Webhook1",
+      "webhookId": "2c4a4d86-e4f8-411f-9539-0bdfe1ef1844"
+    },
+    {
+      "parameters": {
+        "jsCode": "const azienda = $json.body.azienda;\nconst job = $json.body.job_description;\nconst tipoQuiz = $json.body.tipo_quiz;\n\nconst chatInput = `\nCrea un quiz di tipo \"${tipoQuiz}\" per valutare candidati al ruolo di ${job.ruolo} (${job.livello})\nin ${azienda.nome}, un'azienda che opera nel settore ${azienda.settore}.\n\nDescrizione azienda:\n${azienda.descrizione}\n\nJob description:\n- Responsabilità principali: ${job.responsabilità.join(', ')}\n- Competenze richieste: ${job.competenze_richieste.join(', ')}\n\nIl quiz deve contenere 10 domande, ognuna con:\n- testo della domanda\n- 4 opzioni di risposta\n- una sola risposta corretta\n- livello di difficoltà da 1 a 10\n- punteggio consigliato\n\nRestituisci tutto in JSON nel formato:\n{\n  \"azienda\": \"${azienda.nome}\",\n  \"ruolo\": \"${job.ruolo}\",\n  \"tipo_quiz\": \"${tipoQuiz}\",\n  \"domande\": [...]\n}\n`;\n\nreturn [{ json: { chatInput } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        192
+      ],
+      "id": "5ccca89e-0328-442c-bab6-be73d08620d4",
+      "name": "Prompt Building"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "quizzes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        2016,
+        192
+      ],
+      "id": "a1bc0c5e-a2cb-4ea7-b886-23faf2dfeb37",
+      "name": "Save quiz to db",
+      "credentials": {
+        "mongoDb": {
+          "id": "FLMHAXern0w0urtu",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.text || $json.output || '';\ntry {\n  const parsed = JSON.parse(text);\n  return [{ json: parsed }];\n} catch (e) {\n  return [{ json: { error: \"Invalid JSON from LLM\", raw: text } }];\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        192
+      ],
+      "id": "400e2b36-da87-40af-9aa4-ec0a62db8191",
+      "name": "Quiz Parsing"
     }
   ],
   "connections": {
-    "HTTP Webhook - Receive Prompt": {
+    "Basic LLM Chain1": {
       "main": [
-        [{ "node": "Prepare Prompt", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Quiz Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Prepare Prompt": {
-      "main": [
-        [{ "node": "Call Local AI (Ollama)", "type": "main", "index": 0 }]
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Call Local AI (Ollama)": {
+    "Webhook1": {
       "main": [
-        [{ "node": "Parse Quiz JSON", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Prompt Building",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Parse Quiz JSON": {
+    "Prompt Building": {
       "main": [
-        [{ "node": "Insert into MongoDB", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Insert into MongoDB": {
+    "Save quiz to db": {
       "main": [
-        [{ "node": "Return Quiz to Client", "type": "main", "index": 0 }]
+        []
+      ]
+    },
+    "Quiz Parsing": {
+      "main": [
+        [
+          {
+            "node": "Save quiz to db",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "id": "quiz-generator-flow"
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c4634464dbda3070448cff2b0e985ce939bdf3b02a7f18188b43757e5967dbc"
+  }
 }
