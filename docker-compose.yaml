@@ -1,30 +1,88 @@
-version: '3.8'
-
 services:
+  # ===========================================
+  # Ollama - LLM Locale
+  # ===========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: smartrecruit-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - smartrecruit-net
+    restart: unless-stopped
+    # Per GPU NVIDIA (opzionale, decommentare se hai GPU):
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ===========================================
+  # n8n - Workflow Automation
+  # ===========================================
   n8n:
     image: n8nio/n8n:latest
-    container_name: n8n
-    restart: unless-stopped
-    ports:
-      - "5678:5678"
+    container_name: smartrecruit-n8n
     environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme123!}
       - N8N_HOST=${N8N_HOST:-localhost}
       - N8N_PORT=5678
       - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
-      - NODE_ENV=production
-      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678}
       - GENERIC_TIMEZONE=${TIMEZONE:-Europe/Rome}
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-generate_with_openssl}
+
+      # Ollama Configuration
+      - OLLAMA_HOST=http://ollama:11434
+      
+      # GitHub Token (set via .env)
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      
+      # Performance
+      - N8N_PAYLOAD_SIZE_MAX=16
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+  
+      # Execution settings
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./n8n/local-files:/files
-    networks:
-      - n8n-network
+      - ./workflows:/backup
+    ports:
+      - "5678:5678"
     depends_on:
-      - mongodb
       - ollama
+    networks:
+      - smartrecruit-net
+    restart: unless-stopped
+
+  # ===========================================
+  # Ollama Web UI (opzionale - interfaccia web per Ollama)
+  # ===========================================
+  ollama-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: smartrecruit-ollama-webui
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ollama_webui_data:/app/backend/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ollama
+    networks:
+      - smartrecruit-net
+    restart: unless-stopped
 
   mongodb:
     image: mongo:7
@@ -34,52 +92,36 @@ services:
       - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-admin}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-changeme}
-      - MONGO_INITDB_DATABASE=${MONGO_DB:-n8n_db}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-changeme123!}
+      - MONGO_INITDB_DATABASE=${MONGO_DB:-smartrecruit}
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+      - ./mongodb/init-scripts:/docker-entrypoint-initdb.d:ro
     networks:
-      - n8n-network
+      - smartrecruit-net
+    command: ["mongod", "--auth"]
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - n8n-network
-
-  express-server:
-    image: node:20
-    container_name: express-server
-    restart: unless-stopped
-    working_dir: /usr/src/app
-    build: 
-      context: ./backend/server
-    volumes:
-      - ./express-app:/usr/src/app
-    ports:
-      - "3000:3000"
-    command: sh -c "npm install && node index.js"
-    networks:
-      - n8n-network
-    depends_on:
-      - mongodb
-
+# ===========================================
+# Volumes
+# ===========================================
 volumes:
+  ollama_data:
+    driver: local
+  ollama_webui_data:
+    driver: local
   n8n_data:
+    driver: local
+  pgadmin_data:
     driver: local
   mongodb_data:
     driver: local
   mongodb_config:
     driver: local
-  ollama_data:
-    driver: local
 
+# ===========================================
+# Networks
+# ===========================================
 networks:
-  n8n-network:
+  smartrecruit-net:
     driver: bridge

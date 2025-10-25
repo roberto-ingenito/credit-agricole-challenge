@@ -1,126 +1,423 @@
 {
-  "name": "CV Parser LLM Locale (Ollama) e MongoDB",
   "nodes": [
     {
       "parameters": {
-        "path": "cv-upload",
-        "options": {},
-        "responseMode": "onReceived",
-        "responseStatusCode": "200",
-        "responseData": "Workflow avviato. Elaborazione in corso...",
-        "responseContentType": "text/plain",
-        "binaryData": true
+        "httpMethod": "POST",
+        "path": "upload-cv",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
       },
-      "name": "Ricevi CV (POST)",
+      "id": "73686bdb-ec9a-4c35-8a73-e0f99c4ddc18",
+      "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "executeOnce": false,
-      "continueOnFail": false,
-      "alwaysContinue": false,
-      "webhookId": "PLACEHOLDER_WEBHOOK_ID",
-      "credentials": {},
-      "id": "a1b2c3d4-e5f6-7g8h-i9j0-k1l2m3n4o5p6"
+      "position": [
+        -864,
+        32
+      ],
+      "webhookId": "smart-recruit-cv-upload"
     },
     {
       "parameters": {
-        "file": {
-          "binaryData": true,
-          "propertyName": "data"
-        },
-        "fileFormat": "PDF",
-        "pdfOptions": {}
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$binary.file.mimeType}}",
+              "operation": "regex",
+              "value2": "application/(pdf|msword|vnd.openxmlformats)"
+            }
+          ]
+        }
       },
-      "name": "Estrai Testo dal CV",
+      "id": "1274fcf9-1560-40e2-92eb-1a2ec1112679",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\"success\": false, \"error\": \"Invalid file or missing consent\", \"details\": \"File must be PDF/Word, <5MB, and consent must be true\"} }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "d14964ee-b343-4b33-ab88-7e6f4fbde13f",
+      "name": "Response Error - Validation",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "id": "fc1c5b42-e858-422e-91c8-34a9a6c17bf8",
+      "name": "Extract PDF Text",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
-      "executeOnce": false,
-      "continueOnFail": false,
-      "alwaysContinue": false,
-      "credentials": {},
-      "id": "b2c3d4e5-f6g7-8h9i-j0k1-l2m3n4o5p6q7"
+      "position": [
+        -416,
+        -160
+      ]
     },
     {
       "parameters": {
-        "serviceUrl": "http://localhost:11434",
-        "model": "mistral",
-        "options": {
-          "systemPrompt": "Sei un assistente esperto nel parsing di CV. Analizza il testo fornito ed estrai le seguenti informazioni chiave: Nome, Cognome, Email, Numero di anni di esperienza (solo numero intero), Lista delle competenze (array di stringhe). Restituisci la tua risposta SOLO come un oggetto JSON valido. Usa 'N/D' per le stringhe e 0 per i numeri mancanti.",
-          "jsonResponse": true
-        },
-        "text": "={{ $json.text }}",
-        "credentialId": "PLACEHOLDER_OLLAMA_CREDENTIAL_ID"
+        "jsCode": "const extractedText = items[0].json.text || '';\nconst candidateEmail = items[0].json.body?.candidate_email || 'unknown@email.com';\nconst filename = items[0].binary?.file?.fileName || 'cv.pdf';\n\nconst prompt = `# RUOLO\nSei un esperto AI specializzato nell'estrazione strutturata di informazioni da CV italiani e internazionali.\n\n# TASK\nAnalizza il seguente CV e estrai tutte le informazioni rilevanti in formato JSON strutturato.\n\n# ISTRUZIONI CRITICHE\n1. Estrai SOLO informazioni esplicitamente presenti nel testo\n2. Non inventare o inferire dati mancanti - usa null se un campo non è presente\n3. Per date ambigue, usa il formato \"YYYY-MM\" o \"YYYY\"\n4. Classifica le skill tecniche per categoria: programming_language, framework, database, tool, cloud, other\n5. Assegna proficiency (beginner/intermediate/advanced/expert) basandoti su: anni esperienza, ruoli, progetti\n6. Estrai sia hard skills che soft skills\n7. Calcola years_total_experience sommando tutte le esperienze lavorative\n8. Per education_level usa: high_school, bachelor, master, phd\n\n# SCHEMA JSON RICHIESTO (RISPETTA ESATTAMENTE QUESTA STRUTTURA)\n{\n  \"personal_info\": {\n    \"full_name\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string o null\",\n    \"location\": {\n      \"city\": \"string o null\",\n      \"country\": \"string o null\"\n    },\n    \"linkedin\": \"string o null\",\n    \"github\": \"string o null\",\n    \"portfolio\": \"string o null\"\n  },\n  \"summary\": \"stringa descrittiva del profilo (max 200 parole)\",\n  \"skills\": {\n    \"technical\": [\n      {\n        \"name\": \"string\",\n        \"category\": \"programming_language|framework|database|tool|cloud|other\",\n        \"proficiency\": \"beginner|intermediate|advanced|expert\",\n        \"years_experience\": \"numero o null\"\n      }\n    ],\n    \"soft_skills\": [\"array di stringhe\"],\n    \"languages\": [\n      {\n        \"language\": \"string\",\n        \"level\": \"A1|A2|B1|B2|C1|C2|native\"\n      }\n    ]\n  },\n  \"experience\": [\n    {\n      \"company\": \"string\",\n      \"role\": \"string\",\n      \"start_date\": \"YYYY-MM o YYYY\",\n      \"end_date\": \"YYYY-MM o YYYY o present\",\n      \"duration_months\": \"numero calcolato o null\",\n      \"description\": \"string\",\n      \"key_achievements\": [\"array di stringhe\"],\n      \"technologies\": [\"array di stringhe\"]\n    }\n  ],\n  \"education\": [\n    {\n      \"degree\": \"string\",\n      \"institution\": \"string\",\n      \"start_date\": \"YYYY-MM o YYYY o null\",\n      \"end_date\": \"YYYY-MM o YYYY o null\",\n      \"grade\": \"string o null\",\n      \"thesis\": \"string o null\"\n    }\n  ],\n  \"certifications\": [\n    {\n      \"name\": \"string\",\n      \"issuer\": \"string\",\n      \"date\": \"YYYY-MM o YYYY\",\n      \"credential_id\": \"string o null\"\n    }\n  ],\n  \"projects\": [\n    {\n      \"name\": \"string\",\n      \"description\": \"string\",\n      \"technologies\": [\"array\"],\n      \"url\": \"string o null\"\n    }\n  ],\n  \"extracted_scores\": {\n    \"years_total_experience\": \"numero\",\n    \"education_level\": \"high_school|bachelor|master|phd\",\n    \"n_certifications\": \"numero\",\n    \"n_projects\": \"numero\"\n  }\n}\n\n# TESTO DEL CV DA ANALIZZARE\n${extractedText}\n\n# OUTPUT RICHIESTO\nFornisci ESCLUSIVAMENTE il JSON valido, senza markdown, senza commenti, senza testo aggiuntivo prima o dopo.\nInizia direttamente con { e termina con }`;\n\nreturn [{\n  json: {\n    prompt: prompt,\n    candidate_email: candidateEmail,\n    filename: filename,\n    extracted_text_preview: extractedText.substring(0, 500)\n  }\n}];"
       },
-      "name": "Estrai Dati con Ollama",
-      "type": "n8n-nodes-base.ollamaChatModel",
-      "typeVersion": 1,
-      "executeOnce": false,
-      "continueOnFail": false,
-      "alwaysContinue": false,
-      "credentials": {
-        "ollamaChatModelApi": "PLACEHOLDER_OLLAMA_CREDENTIAL_NAME"
-      },
-      "id": "c3d4e5f6-g7h8-9i0j-k1l2-m3n4o5p6q7r8"
-    },
-    {
-      "parameters": {
-        "functionCode": "const ollamaOutput = $input.item.json.text;\n\n// Ollama dovrebbe restituire JSON, ma lo ripuliamo e parzialmente validiamo\nlet parsedData;\ntry {\n  // Rimuove i backticks o marcatori non JSON se presenti\n  const cleanJsonString = ollamaOutput.replace(/```json|```/g, '').trim();\n  parsedData = JSON.parse(cleanJsonString);\n} catch (e) {\n  // Se il parsing fallisce, logga e restituisci errore per l'ispezione\n  console.error(\"Errore nel parsing JSON di Ollama:\", e, ollamaOutput);\n  return [{ json: { error: 'JSON parsing failed', raw_llm_output: ollamaOutput, filename: $input.item.binary.data.fileName } }];\n}\n\n// Aggiungi metadati utili\nparsedData.data_elaborazione = new Date().toISOString();\nparsedData.nome_file_cv = $input.item.binary.data.fileName;\n\n// Ritorna l'oggetto pulito\nreturn [{ json: parsedData }];",
-        "options": {}
-      },
-      "name": "Prepara Documento MongoDB",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "executeOnce": false,
-      "continueOnFail": false,
-      "alwaysContinue": false,
-      "credentials": {},
-      "id": "d4e5f6g7-h8i9-0j1k-l2m3-n4o5p6q7r8s9"
-    },
-    {
-      "parameters": {
-        "database": "il_tuo_db_cv",
-        "collection": "candidati",
-        "operation": "insertDocuments",
-        "documents": "={{ $json }}",
-        "options": {}
-      },
-      "name": "Salva su MongoDB",
-      "type": "n8n-nodes-base.mongoDb",
+      "id": "126cbe6c-a612-4512-b918-41ee4996de4b",
+      "name": "Prepare LLM Prompt",
+      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "executeOnce": false,
-      "continueOnFail": false,
-      "alwaysContinue": false,
-      "credentials": {
-        "mongoDb": "PLACEHOLDER_MONGODB_CREDENTIAL_NAME"
+      "position": [
+        -192,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "qwen3:8b"
+            },
+            {
+              "name": "prompt",
+              "value": "={{$json.prompt}}"
+            },
+            {
+              "name": "stream",
+              "value": false
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "options",
+              "value": "={{ {\"temperature\": 0.1, \"num_predict\": 4096} }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
       },
-      "id": "e5f6g7h8-i9j0-k1l2-m3n4-o5p6q7r8s9t0"
+      "id": "9fafa60f-d6bd-4d7f-912a-a7bbed078d15",
+      "name": "Ollama LLM Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        32,
+        -160
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "F6rPQJKQix9aQq83",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  // Accedi all'item corrente\n  const ollamaResponse = $input.item.json.response;\n\n  // Verifica che response esista\n  if (!ollamaResponse) {\n    return {\n      success: false,\n      error: 'Response field is missing from Ollama output',\n      timestamp: new Date().toISOString()\n    };\n  }\n\n  // Se response è già un oggetto, non serve fare il parse\n  let extracted;\n  if (typeof ollamaResponse === 'string') {\n    // Cerca JSON nel testo\n    const jsonMatch = ollamaResponse.match(/\\{[\\s\\S]*\\}/);\n    if (!jsonMatch) {\n      return {\n        success: false,\n        error: 'No JSON found in Ollama response',\n        raw_response: ollamaResponse.substring(0, 200),\n        timestamp: new Date().toISOString()\n      };\n    }\n    extracted = JSON.parse(jsonMatch[0]);\n  } else {\n    // È già un oggetto\n    extracted = ollamaResponse;\n  }\n\n  // Prepara keywords per la ricerca\n  const searchKeywords = [\n    extracted.role || '',\n    ...(extracted.primary_skills || []),\n    ...(extracted.secondary_skills || [])\n  ].filter(k => k).join(' ');\n\n  return {\n    success: true,\n    original_query: $input.item.json.body?.query,\n    extracted_criteria: extracted,\n    search_keywords: searchKeywords,\n    timestamp: new Date().toISOString()\n  };\n\n} catch (error) {\n  return {\n    success: false,\n    error: error.message,\n    error_type: error.name,\n    timestamp: new Date().toISOString()\n  };\n}"
+      },
+      "id": "cdeee50c-3fc4-48f0-b95e-9647fc0cd820",
+      "name": "Parse and Validate JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "e5cf7f2d-7baf-43d7-929a-5632733098eb",
+      "name": "Check Parsing Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\"success\": false, \"error\": \"CV parsing failed\", \"details\": $json.error, \"raw_preview\": $json.raw_response} }}",
+        "options": {
+          "responseCode": 422
+        }
+      },
+      "id": "e4206955-9bec-42b4-a7cb-68f876a7ed48",
+      "name": "Response Error - Parsing",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        32
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "candidates",
+        "fields": "personal_info,skills",
+        "options": {
+          "dateFields": ""
+        }
+      },
+      "id": "af375ee8-03f8-4477-b4d1-3d77744b645a",
+      "name": "MongoDB Insert",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        -160
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "mongoDb": {
+          "id": "wxTT5ALvByn25y7M",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const insertedDoc = items[0].json;\nconst candidateId = insertedDoc._id || insertedDoc.insertedId;\nconst parsedCV = items[0].json.parsed_cv || {};\n\nreturn [{\n  json: {\n    success: true,\n    message: \"CV analizzato e salvato con successo\",\n    candidate_id: candidateId,\n    extracted_data: {\n      name: parsedCV.personal_info?.full_name,\n      email: parsedCV.personal_info?.email,\n      skills_count: parsedCV.skills?.technical?.length || 0,\n      experience_years: parsedCV.extracted_scores?.years_total_experience || 0,\n      certifications: parsedCV.extracted_scores?.n_certifications || 0\n    },\n    next_steps: [\n      \"Completa il micro-task tecnico\",\n      \"Collega i tuoi profili GitHub/LinkedIn (opzionale)\",\n      \"Attendi il matching con le posizioni aperte\"\n    ]\n  }\n}];"
+      },
+      "id": "9f12d4de-0994-4609-9bd9-f5eb8ce44b6e",
+      "name": "Prepare Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "id": "68fb8ff8-2b4a-4834-8e67-dfb3dfff884d",
+      "name": "Response Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "parsing_logs",
+        "fields": {
+          "timestamp": "={{$now}}",
+          "filename": "={{$json.filename}}",
+          "candidate_email": "={{$json.candidate_email}}",
+          "status": "={{$json.success ? 'success' : 'failed'}}",
+          "error": "={{$json.error}}",
+          "extracted_text_length": "={{$json.extracted_text_preview?.length || 0}}"
+        },
+        "options": {}
+      },
+      "id": "aa850405-2754-4190-a032-2a633a2a4000",
+      "name": "Log Parsing Attempt",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [
+        672,
+        144
+      ],
+      "credentials": {
+        "mongoDb": {
+          "id": "wxTT5ALvByn25y7M",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n// for (const item of $input.all()) {\n//  item.json.myNewField = 1;\n//}\n\nreturn $input.first().json.extracted_criteria"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -256
+      ],
+      "id": "bec96b7f-dafc-4a3b-8988-488edbd3ef9a",
+      "name": "Code in JavaScript"
     }
   ],
   "connections": {
-    "Ricevi CV (POST)": [
-      {
-        "node": "Estrai Testo dal CV",
-        "index": 0
-      }
-    ],
-    "Estrai Testo dal CV": [
-      {
-        "node": "Estrai Dati con Ollama",
-        "index": 0
-      }
-    ],
-    "Estrai Dati con Ollama": [
-      {
-        "node": "Prepara Documento MongoDB",
-        "index": 0
-      }
-    ],
-    "Prepara Documento MongoDB": [
-      {
-        "node": "Salva su MongoDB",
-        "index": 0
-      }
-    ]
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Error - Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Prepare LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LLM Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ollama LLM Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama LLM Call": {
+      "main": [
+        [
+          {
+            "node": "Parse and Validate JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse and Validate JSON": {
+      "main": [
+        [
+          {
+            "node": "Log Parsing Attempt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Parsing Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Parsing Success": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Error - Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB Insert": {
+      "main": [
+        [
+          {
+            "node": "Prepare Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Success Response": {
+      "main": [
+        [
+          {
+            "node": "Response Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "MongoDB Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "active": false,
-  "version": 1
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0f41c741239e7d8454e734c25d98231620c3dc2b62c93f64cb7348d589308a36"
+  }
 }
