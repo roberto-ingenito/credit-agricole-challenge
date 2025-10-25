@@ -1,0 +1,116 @@
+{
+  "name": "Quiz Generator & Saver",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "generate-quiz",
+        "methods": ["POST"]
+      },
+      "id": "WebhookNode",
+      "name": "HTTP Webhook - Receive Prompt",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookDescription": "Riceve il prompt e i dati del quiz"
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { prompt: $json.body.prompt, tipo_quiz: $json.body.tipo_quiz, contesto: $json.body.contesto }}];"
+      },
+      "id": "PreparePrompt",
+      "name": "Prepare Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:11434/api/generate",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "options": {},
+        "body": {
+          "model": "llama3",
+          "prompt": "{{$json[\"prompt\"]}}",
+          "stream": false
+        }
+      },
+      "id": "CallLocalAI",
+      "name": "Call Local AI (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Assume che l'AI restituisca { response: '{...quiz JSON...}' }\nconst quiz = JSON.parse($json.response || '{}');\nreturn [{ json: quiz }];"
+      },
+      "id": "ParseQuiz",
+      "name": "Parse Quiz JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "collection": "quiz",
+        "fields": "={{$json}}"
+      },
+      "id": "InsertMongo",
+      "name": "Insert into MongoDB",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "credentials": {
+        "mongoDb": "MongoDB_Credentials"
+      }
+    },
+    {
+      "parameters": {
+        "responseMode": "onReceived",
+        "responseData": "={{$json}}",
+        "options": {
+          "responseContentType": "application/json"
+        }
+      },
+      "id": "ReturnResponse",
+      "name": "Return Quiz to Client",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "HTTP Webhook - Receive Prompt": {
+      "main": [
+        [{ "node": "Prepare Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Prompt": {
+      "main": [
+        [{ "node": "Call Local AI (Ollama)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Local AI (Ollama)": {
+      "main": [
+        [{ "node": "Parse Quiz JSON", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Quiz JSON": {
+      "main": [
+        [{ "node": "Insert into MongoDB", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insert into MongoDB": {
+      "main": [
+        [{ "node": "Return Quiz to Client", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "quiz-generator-flow"
+}
