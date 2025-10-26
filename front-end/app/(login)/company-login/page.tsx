@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AxiosError } from "axios";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { login } from "@/lib/redux/slices/authSlice";
 import { addToast } from "@heroui/toast";
 import { Form } from "@heroui/form";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
@@ -13,6 +12,7 @@ import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import { BuildingOfficeIcon } from "@heroicons/react/24/outline";
+import { loginCompany } from "@/lib/redux/slices/authSlice";
 
 export default function HRLoginPage() {
     const router = useRouter();
@@ -30,10 +30,14 @@ export default function HRLoginPage() {
         setIsLoading(true);
 
         try {
-            // await dispatch(login({ email: email, password: password, role: "hr" })).unwrap();
+            const result = await dispatch(loginCompany({
+                email: email,
+                password: password,
+            },));
 
-            // Reindirizza alla dashboard HR
-            router.push("/hr/dashboard");
+            if (loginCompany.fulfilled.match(result)) {
+                router.push('/dashboard/company');
+            }
         } catch (err) {
             addToast({
                 title: "Accesso non riuscito",

@@ -12,9 +12,12 @@ import { Input } from "@heroui/input";
 import { Checkbox } from "@heroui/checkbox";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import { BriefcaseIcon } from "@heroicons/react/24/outline";
+import { useAppDispatch } from "@/lib/redux/hooks";
+import { registerCandidate } from "@/lib/redux/slices/authSlice";
 
 export default function CandidateSignupPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch()
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -55,16 +58,16 @@ export default function CandidateSignupPage() {
         setIsLoading(true);
 
         try {
-            // Simulazione chiamata API
-            // await registerCandidate(formData);
+            const result = await dispatch(registerCandidate({
+                email: formData.email,
+                lastName: formData.lastName,
+                firstName: formData.firstName,
+                password: formData.password,
+            },));
 
-            addToast({
-                title: "Registrazione completata!",
-                description: "Account creato con successo. Effettua il login.",
-                severity: "success",
-            });
-
-            router.push("/candidate-login");
+            if (registerCandidate.fulfilled.match(result)) {
+                router.push('/dashboard/candidate');
+            }
         } catch (err) {
             addToast({
                 title: "Registrazione fallita",

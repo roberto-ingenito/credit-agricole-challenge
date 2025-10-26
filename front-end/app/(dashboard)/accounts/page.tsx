@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchAccounts, createAccount, deleteAccount } from "@/lib/redux/slices/accountsSlice";
-import { AccountCreateDto } from "@/lib/types/account";
+import { AccountCreateDto } from "@/lib/types/company";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";

@@ -4,35 +4,27 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AxiosError } from "axios";
 import { addToast } from "@heroui/toast";
-import { Form } from "@heroui/form";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { Input, Textarea } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
 import { Checkbox } from "@heroui/checkbox";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import { BuildingOfficeIcon } from "@heroicons/react/24/outline";
+import { registerCompany } from "@/lib/redux/slices/authSlice";
+import { useAppDispatch } from "@/lib/redux/hooks";
 
-const companySizes = [
-    { key: "1-10", label: "1-10 dipendenti" },
-    { key: "11-50", label: "11-50 dipendenti" },
-    { key: "51-200", label: "51-200 dipendenti" },
-    { key: "201-500", label: "201-500 dipendenti" },
-    { key: "501-1000", label: "501-1000 dipendenti" },
-    { key: "1000+", label: "Oltre 1000 dipendenti" },
-];
+
 
 export default function HRCompanySignupPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
 
     const [formData, setFormData] = useState({
         companyName: "",
-        companySize: "",
+        email: "",
+        description: "",
         industry: "",
-        website: "",
-        hrName: "",
-        hrEmail: "",
         password: "",
         confirmPassword: "",
         acceptTerms: false,
@@ -44,7 +36,10 @@ export default function HRCompanySignupPage() {
     const toggleVisibility = () => setIsVisible(!isVisible);
     const toggleVisibilityConfirm = () => setIsVisibleConfirm(!isVisibleConfirm);
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e: any) => {
+        e.preventDefault();
+
+
         if (formData.password !== formData.confirmPassword) {
             addToast({
                 title: "Errore",
@@ -66,16 +61,17 @@ export default function HRCompanySignupPage() {
         setIsLoading(true);
 
         try {
-            // Simulazione chiamata API
-            // await registerCompany(formData);
+            const result = await dispatch(registerCompany({
+                email: formData.email,
+                password: formData.password,
+                description: formData.description,
+                industry: formData.industry,
+                name: formData.companyName,
+            },));
 
-            addToast({
-                title: "Registrazione completata!",
-                description: "Azienda registrata con successo. Effettua il login.",
-                severity: "success",
-            });
-
-            router.push("/company-login");
+            if (registerCompany.fulfilled.match(result)) {
+                router.push('/dashboard/company');
+            }
         } catch (err) {
             addToast({
                 title: "Registrazione fallita",
@@ -131,12 +127,75 @@ export default function HRCompanySignupPage() {
                         </div>
 
                         <Textarea
-                            value={formData.website}
-                            onValueChange={(value) => setFormData({ ...formData, website: value })}
+                            value={formData.description}
+                            onValueChange={(value) => setFormData({ ...formData, description: value })}
                             label="Descrizione Azienda"
                             type="text"
                             variant="bordered"
                             placeholder="es.: Casa di moda che unisce tecnologia e creatività per sviluppare collezioni innovative e sostenibili"
+                        />
+                    </div>
+
+                    <Input
+                        value={formData.email}
+                        onValueChange={(value) => setFormData({ ...formData, email: value })}
+                        label="Email"
+                        type="email"
+                        required
+                        variant="bordered"
+                        className="mt-4"
+                        autoComplete="email"
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <Input
+                            value={formData.password}
+                            onValueChange={(value) => setFormData({ ...formData, password: value })}
+                            label="Password"
+                            type={isVisible ? "text" : "password"}
+                            required
+                            variant="bordered"
+                            placeholder="Almeno 8 caratteri"
+                            autoComplete="new-password"
+                            endContent={
+                                <button
+                                    className="focus:outline-none"
+                                    type="button"
+                                    onClick={toggleVisibility}
+                                    aria-label="mostra/nascondi password"
+                                >
+                                    {isVisible ? (
+                                        <EyeSlashIcon className="w-5 h-5 text-default-400 pointer-events-none" />
+                                    ) : (
+                                        <EyeIcon className="w-5 h-5 text-default-400 pointer-events-none" />
+                                    )}
+                                </button>
+                            }
+                        />
+
+                        <Input
+                            value={formData.confirmPassword}
+                            onValueChange={(value) => setFormData({ ...formData, confirmPassword: value })}
+                            label="Conferma Password"
+                            type={isVisibleConfirm ? "text" : "password"}
+                            required
+                            variant="bordered"
+                            placeholder="Ripeti la password"
+                            autoComplete="new-password"
+                            endContent={
+                                <button
+                                    className="focus:outline-none"
+                                    type="button"
+                                    onClick={toggleVisibilityConfirm}
+                                    aria-label="mostra/nascondi password"
+                                >
+                                    {isVisibleConfirm ? (
+                                        <EyeSlashIcon className="w-5 h-5 text-default-400 pointer-events-none" />
+                                    ) : (
+                                        <EyeIcon className="w-5 h-5 text-default-400 pointer-events-none" />
+                                    )}
+                                </button>
+                            }
                         />
                     </div>
 

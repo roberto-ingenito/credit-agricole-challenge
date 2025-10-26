@@ -1,48 +1,82 @@
-import { NextResponse, NextRequest } from 'next/server'
-import { getJwtToken } from './app/actions';
+// middleware.ts (nella root del progetto)
+import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
-const AUTH_ROUTES = ['/login', '/signup'];
-const PROTECTED_ROUTES = ['/dashboard', '/accounts', '/transactions', '/categories'];
+export function middleware(request: NextRequest) {
+    const session = request.cookies.get('session');
+    const userType = request.cookies.get('userType');
+    const pathname = request.nextUrl.pathname;
 
-export async function middleware(request: NextRequest) {
-    /* const { pathname } = request.nextUrl;
+    // Route pubbliche (accessibili senza autenticazione)
+    const publicRoutes = [
+        '/landing',
+        '/login',
+        '/company-login',
+        '/candidate-login',
+        '/company-signup',
+        '/candidate-signup',
+    ];
 
-    if (pathname === "/") {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Route per le company
+    const companyRoutes = [
+        '/dashboard/company',
+        '/company',
+    ];
+
+    // Route per i candidate
+    const candidateRoutes = [
+        '/dashboard/candidate',
+        '/candidate',
+    ];
+
+
+    // Controlla se la route corrente è pubblica
+    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+
+    if (!session && !isPublicRoute) {
+        return NextResponse.redirect(new URL('/landing', request.url));
     }
 
-    // Check route type con un singolo controllo
-    const isAuthPage = AUTH_ROUTES.some(route => pathname.startsWith(route));
-    const isProtectedPage = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
-
-    // Early return se non è né auth né protected
-    if (!isAuthPage && !isProtectedPage) {
+    if (pathname.startsWith("/landing")) {
         return NextResponse.next();
     }
 
-    const token = await getJwtToken();
+    // Se c'è una sessione e l'utente cerca di accedere a pagine di login/register, redirect alla dashboard
+    if (session && userType) {
+        if (isPublicRoute && pathname !== '/') {
+            const dashboardUrl = userType.value === 'company'
+                ? '/dashboard/company'
+                : '/dashboard/candidate';
+            return NextResponse.redirect(new URL(dashboardUrl, request.url));
+        }
 
-    // Redirect non autenticati dalle pagine protette
-    if (!token && isProtectedPage) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        // Controlla che company non acceda a route candidate
+        const isCompanyRoute = companyRoutes.some(route => pathname.startsWith(route));
+        if (isCompanyRoute && userType.value !== 'company') {
+            return NextResponse.redirect(new URL('/dashboard/candidate', request.url));
+        }
+
+        // Controlla che candidate non acceda a route company
+        const isCandidateRoute = candidateRoutes.some(route => pathname.startsWith(route));
+        if (isCandidateRoute && userType.value !== 'candidate') {
+            return NextResponse.redirect(new URL('/dashboard/company', request.url));
+        }
     }
-
-    // Redirect autenticati dalle pagine di auth
-    if (token && isAuthPage) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-    } */
 
     return NextResponse.next();
 }
 
-/* export const config = {
+// Configura quali route devono essere processate dal middleware
+export const config = {
     matcher: [
-        '/',
-        '/dashboard/:path*',
-        '/accounts/:path*',
-        '/transactions/:path*',
-        '/categories/:path*',
-        '/login',
-        '/signup',
+        /*
+         * Match tutte le route eccetto:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public files (public folder)
+         */
+        '/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)',
     ],
-}; */
+};

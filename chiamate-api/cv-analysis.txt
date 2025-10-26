@@ -1,1 +1,1 @@
-curl -X POST http://localhost:5678/webhook/upload-cv -H "Content-Type: multipart/form-data" -F "file=@./CV-C_sharp.pdf" -F "consent=true" -F "candidate_email=ingenitoroby@gmail.com"
+curl -X POST http://localhost:5678/webhook/upload-cv -H "Content-Type: multipart/form-data" -F "file=@./CV-C_sharp.pdf" -F "consent=true" -F "candidate_id=candidate-id"

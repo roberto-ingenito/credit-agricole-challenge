@@ -1,4 +1,4 @@
-import { Account } from "@/lib/types/account";
+import { Account } from "@/lib/types/company";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
