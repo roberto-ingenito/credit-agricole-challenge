@@ -13,7 +13,8 @@ import {
     AcademicCapIcon,
     SparklesIcon,
     ClockIcon,
-    BuildingOfficeIcon
+    BuildingOfficeIcon,
+    ArrowRightStartOnRectangleIcon
 } from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import type { JobDescription, Quiz } from "@/lib/types/index";
@@ -24,6 +25,8 @@ import {
     NavbarItem,
 } from "@heroui/navbar";
 import { DocumentArrowUpIcon } from "@heroicons/react/24/outline";
+
+import * as authSlice from "@/lib/redux/slices/authSlice"
 
 import {
     Modal,
@@ -36,6 +39,7 @@ import {
     DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import { fetchJobOffers } from "@/lib/redux/slices/jobOffersSlice";
+import { useDispatch } from "react-redux";
 
 interface CVUploadModalProps {
     isOpen: boolean;
@@ -272,7 +276,25 @@ interface NavbarProps {
     onOpenCVModal: () => void;
 }
 
+
+
 export function Navbar({ onOpenCVModal }: NavbarProps) {
+    const dispatch = useAppDispatch();
+    const router = useRouter();
+
+    async function logout() {
+        try {
+            await dispatch(authSlice.logout());
+            router.push('/landing');
+        } catch (err) {
+            addToast({
+                title: "Accesso non riuscito",
+                description: "Errore durante il logout.",
+                severity: "warning",
+            });
+        }
+    }
+
     return (
         <NextUINavbar
             isBordered
@@ -287,7 +309,7 @@ export function Navbar({ onOpenCVModal }: NavbarProps) {
                     </div>
                     <div>
                         <p className="font-bold text-lg text-gray-900 dark:text-white leading-tight">
-                            Advanced Recruitment
+                            SkillQUest
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                             Il tuo futuro professionale
@@ -308,6 +330,17 @@ export function Navbar({ onOpenCVModal }: NavbarProps) {
                         Carica CV
                     </Button>
                 </NavbarItem>
+                <NavbarItem>
+                    <Button
+                        color="primary"
+                        variant="flat"
+                        startContent={<ArrowRightStartOnRectangleIcon className="w-4 h-4" />}
+                        onPress={logout}
+                        className="font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+                    >
+                        Esci
+                    </Button>
+                </NavbarItem>
             </NavbarContent>
         </NextUINavbar>
     );
@@ -322,6 +355,7 @@ export default function UserDashboardPage() {
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const user = useAppSelector(state => state.auth.user);
+
 
     useEffect(() => {
         // Carica le job offers e i quiz disponibili
