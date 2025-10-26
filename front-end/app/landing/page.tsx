@@ -14,7 +14,7 @@ import {
     ShieldCheckIcon,
     SparklesIcon,
     RocketLaunchIcon,
-} from "@heroicons/react/24/outline";
+} from "@heroicons/react/24/solid";
 
 export default function LandingPage() {
     const router = useRouter();
@@ -91,30 +91,30 @@ export default function LandingPage() {
                                 <CardBody className="px-8 pb-8">
                                     <ul className="space-y-3 mb-6 text-left">
                                         <li className="flex items-start gap-2">
-                                            <span className="text-primary-500 mt-1 text-lg">✓</span>
+                                            <span className="text-primary-500 text-lg">✓</span>
                                             <span className="text-default-600">Crea il tuo profilo professionale</span>
                                         </li>
                                         <li className="flex items-start gap-2">
-                                            <span className="text-primary-500 mt-1 text-lg">✓</span>
+                                            <span className="text-primary-500 text-lg">✓</span>
                                             <span className="text-default-600">
                                                 Candidati alle migliori opportunità
                                             </span>
                                         </li>
                                         <li className="flex items-start gap-2">
-                                            <span className="text-primary-500 mt-1 text-lg">✓</span>
+                                            <span className="text-primary-500 text-lg">✓</span>
                                             <span className="text-default-600">
                                                 Monitora lo stato delle tue candidature
                                             </span>
                                         </li>
                                         <li className="flex items-start gap-2">
-                                            <span className="text-primary-500 mt-1 text-lg">✓</span>
+                                            <span className="text-primary-500 text-lg">✓</span>
                                             <span className="text-default-600">Ricevi notifiche in tempo reale</span>
                                         </li>
                                     </ul>
                                     <Button
                                         color="primary"
                                         size="lg"
-                                        className="w-full font-semibold"
+                                        className="w-full font-semibold dark:text-white light:text-black"
                                         endContent={<BriefcaseIcon className="w-5 h-5" />}
                                         onPress={() => router.push("/candidate-login")}
                                     >
@@ -148,26 +148,26 @@ export default function LandingPage() {
                                 <CardBody className="px-8 pb-8">
                                     <ul className="space-y-3 mb-6 text-left">
                                         <li className="flex items-start gap-2">
-                                            <span className="text-blue-500 mt-1 text-lg">✓</span>
+                                            <span className="text-blue-500 text-lg">✓</span>
                                             <span className="text-default-600">Gestisci posizioni aperte</span>
                                         </li>
                                         <li className="flex items-start gap-2">
-                                            <span className="text-blue-500 mt-1 text-lg">✓</span>
+                                            <span className="text-blue-500 text-lg">✓</span>
                                             <span className="text-default-600">Valuta candidati qualificati</span>
                                         </li>
                                         <li className="flex items-start gap-2">
-                                            <span className="text-blue-500 mt-1 text-lg">✓</span>
+                                            <span className="text-blue-500 text-lg">✓</span>
                                             <span className="text-default-600">Analytics e reportistica avanzata</span>
                                         </li>
                                         <li className="flex items-start gap-2">
-                                            <span className="text-blue-500 mt-1 text-lg">✓</span>
+                                            <span className="text-blue-500 text-lg">✓</span>
                                             <span className="text-default-600">Collabora con il tuo team</span>
                                         </li>
                                     </ul>
                                     <Button
                                         color="primary"
                                         size="lg"
-                                        className="w-full font-semibold bg-blue-600"
+                                        className="w-full font-semibold bg-blue-600 dark:text-white light:text-black"
                                         endContent={<BuildingOfficeIcon className="w-5 h-5" />}
                                         onPress={() => router.push("/company-login")}
                                     >
@@ -193,9 +193,8 @@ export default function LandingPage() {
                         <h2 className="text-3xl sm:text-4xl font-bold text-default-900 mb-4">
                             Perché Sceglierci
                         </h2>
-                        <p className="text-lg text-default-600 max-w-2xl mx-auto">
-                            Una piattaforma completa progettata per semplificare ogni fase del processo di
-                            selezione
+                        <p className="text-lg text-default-600 max-w-lg mx-auto">
+                            Una piattaforma completa progettata per semplificare ogni fase del processo di selezione
                         </p>
                     </div>
 
@@ -204,7 +203,7 @@ export default function LandingPage() {
                             <Card key={index} isHoverable className="transition-shadow">
                                 <CardBody className="p-6">
                                     <div className="flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary-100 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
+                                        <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/20 rounded-lg text-primary">
                                             {feature.icon}
                                         </div>
                                         <div>
@@ -267,13 +266,8 @@ export default function LandingPage() {
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/candidate/signup" className="hover:text-white" size="sm">
+                                    <Link href="/candidate-signup" className="hover:text-white" size="sm">
                                         Registrati
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link href="/jobs" className="hover:text-white" size="sm">
-                                        Cerca Lavoro
                                     </Link>
                                 </li>
                             </ul>
@@ -287,13 +281,8 @@ export default function LandingPage() {
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/hr/company-signup" className="hover:text-white" size="sm">
+                                    <Link href="/company-signup" className="hover:text-white" size="sm">
                                         Registra Azienda
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link href="/pricing" className="hover:text-white" size="sm">
-                                        Prezzi
                                     </Link>
                                 </li>
                             </ul>
@@ -302,25 +291,22 @@ export default function LandingPage() {
                             <h3 className="text-lg font-bold mb-4">Supporto</h3>
                             <ul className="space-y-2 text-slate-400">
                                 <li>
-                                    <Link href="/help" className="hover:text-white" size="sm">
+                                    <Link href="#" className="hover:text-white" size="sm">
                                         Centro Assistenza
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/contact" className="hover:text-white" size="sm">
+                                    <Link href="#" className="hover:text-white" size="sm">
                                         Contattaci
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/privacy" className="hover:text-white" size="sm">
+                                    <Link href="#" className="hover:text-white" size="sm">
                                         Privacy Policy
                                     </Link>
                                 </li>
                             </ul>
                         </div>
-                    </div>
-                    <div className="border-t border-slate-800 pt-8 text-center text-slate-400">
-                        <p>© 2025 Recruitment Platform. Tutti i diritti riservati.</p>
                     </div>
                 </div>
             </footer>

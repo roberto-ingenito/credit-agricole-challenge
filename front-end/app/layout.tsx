@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html suppressHydrationWarning lang="en">
       <head />
       <body>
-        <Providers initialUserData={userData} themeProps={{ attribute: "class", defaultTheme: "dark" }}>{children}</Providers>
+        <Providers initialUserData={userData} themeProps={{ attribute: "class", defaultTheme: "light" }}>{children}</Providers>
       </body>
     </html>
   );

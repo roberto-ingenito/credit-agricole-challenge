@@ -12,7 +12,7 @@ import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
-import { BriefcaseIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { BriefcaseIcon } from "@heroicons/react/24/outline";
 
 export default function CandidateLoginPage() {
     const router = useRouter();
@@ -51,17 +51,7 @@ export default function CandidateLoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-dvh bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-950 dark:to-secondary-950 p-4">
-            {/* Back Button */}
-            <Button
-                as={Link}
-                href="/"
-                isIconOnly
-                variant="light"
-                className="absolute top-4 left-4"
-                startContent={<ArrowLeftIcon className="w-5 h-5" />}
-            />
-
+        <div className="flex items-center justify-center min-h-dvh bg-gradient-to-br from-primary-50 to-primary-100 p-4">
             <Card className="w-full max-w-md shadow-xl">
                 <CardHeader className="flex flex-col gap-3 px-6 pt-8 pb-4">
                     <div className="flex items-center justify-center w-16 h-16 mx-auto bg-primary-100 dark:bg-primary-900 rounded-full">
@@ -135,8 +125,8 @@ export default function CandidateLoginPage() {
                     <div className="w-full border-t border-divider" />
                     <p className="text-sm text-default-500 text-center">
                         Non hai ancora un profilo?
-                        <Link href="/candidate/signup" size="sm" className="pl-2 font-semibold">
-                            Crea il tuo CV
+                        <Link href="/candidate-signup" size="sm" className="pl-2 font-semibold">
+                            Registrati
                         </Link>
                     </p>
                     <p className="text-xs text-default-400 text-center">
