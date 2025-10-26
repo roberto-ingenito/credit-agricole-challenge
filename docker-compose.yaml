@@ -41,15 +41,15 @@ services:
 
       # Ollama Configuration
       - OLLAMA_HOST=http://ollama:11434
-      
+
       # GitHub Token (set via .env)
       - GITHUB_TOKEN=${GITHUB_TOKEN}
-      
+
       # Performance
       - N8N_PAYLOAD_SIZE_MAX=16
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_MAX_AGE=168
-  
+
       # Execution settings
       - EXECUTIONS_PROCESS=main
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
@@ -101,6 +101,24 @@ services:
     networks:
       - smartrecruit-net
     command: ["mongod", "--auth"]
+
+  front-end:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    image: front-end
+    container_name: front-end
+    ports:
+      - "5100:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-changeme123!}@mongodb:27017/${MONGO_DB:-smartrecruit}?authSource=admin
+      - MONGODB_DB=${MONGO_DB:-smartrecruit}
+    depends_on:
+      - mongodb
+    networks:
+      - smartrecruit-net
+    restart: always
 
 # ===========================================
 # Volumes

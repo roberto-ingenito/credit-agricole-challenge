@@ -35,14 +35,14 @@ export async function POST(request: NextRequest) {
         const cookieStore = await cookies();
         cookieStore.set('session', candidate._id.toString(), {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            // secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             maxAge: 60 * 60 * 24, // 24 ore
             path: '/',
         });
         cookieStore.set('userType', "candidate", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            // secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             maxAge: 60 * 60 * 24, // 24 ore
             path: '/',

@@ -46,7 +46,7 @@ interface CVUploadModalProps {
     onOpenChange: (open: boolean) => void;
 }
 
-export function CVUploadModal({ isOpen, onOpenChange }: CVUploadModalProps) {
+function CVUploadModal({ isOpen, onOpenChange }: CVUploadModalProps) {
     const [uploadedCV, setUploadedCV] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const user = useAppSelector(state => state.auth.user);
@@ -276,9 +276,7 @@ interface NavbarProps {
     onOpenCVModal: () => void;
 }
 
-
-
-export function Navbar({ onOpenCVModal }: NavbarProps) {
+function Navbar({ onOpenCVModal }: NavbarProps) {
     const dispatch = useAppDispatch();
     const router = useRouter();
 
@@ -309,7 +307,7 @@ export function Navbar({ onOpenCVModal }: NavbarProps) {
                     </div>
                     <div>
                         <p className="font-bold text-lg text-gray-900 dark:text-white leading-tight">
-                            SkillQUest
+                            SkillQuest
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                             Il tuo futuro professionale
