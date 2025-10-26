@@ -11,10 +11,13 @@ import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import { Checkbox } from "@heroui/checkbox";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
-import { BriefcaseIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { BriefcaseIcon } from "@heroicons/react/24/outline";
+import { useAppDispatch } from "@/lib/redux/hooks";
+import { registerCandidate } from "@/lib/redux/slices/authSlice";
 
 export default function CandidateSignupPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch()
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -55,16 +58,22 @@ export default function CandidateSignupPage() {
         setIsLoading(true);
 
         try {
-            // Simulazione chiamata API
-            // await registerCandidate(formData);
+            const result = await dispatch(registerCandidate({
+                email: formData.email,
+                lastName: formData.lastName,
+                firstName: formData.firstName,
+                password: formData.password,
+            },));
 
-            addToast({
-                title: "Registrazione completata!",
-                description: "Account creato con successo. Effettua il login.",
-                severity: "success",
-            });
-
-            router.push("/candidate-login");
+            if (registerCandidate.fulfilled.match(result)) {
+                router.push('/dashboard/candidate');
+            } else {
+                addToast({
+                    title: "Registrazione fallita",
+                    description: "Errore durante la registrazione.",
+                    severity: "warning",
+                });
+            }
         } catch (err) {
             addToast({
                 title: "Registrazione fallita",
@@ -77,18 +86,7 @@ export default function CandidateSignupPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-dvh bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-950 dark:to-secondary-950 p-4">
-            <Button
-                as={Link}
-                href="/"
-                isIconOnly
-                variant="light"
-                className="absolute top-4 left-4"
-                aria-label="Torna alla home"
-            >
-                <ArrowLeftIcon className="w-5 h-5" />
-            </Button>
-
+        <div className="flex items-center justify-center min-h-dvh bg-gradient-to-br from-primary-50 to-primary-100 p-4">
             <Card className="w-full max-w-md shadow-xl">
                 <CardHeader className="flex flex-col gap-3 px-6 pt-8 pb-4">
                     <div className="flex items-center justify-center w-16 h-16 mx-auto bg-primary-100 dark:bg-primary-900 rounded-full">
