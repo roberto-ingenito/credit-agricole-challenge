@@ -1,0 +1,28 @@
+curl -X POST "http://localhost:5678/webhook-test/quiz-generation" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "azienda": {
+      "id": "id-azienda",
+      "nome": "StyleWorks",
+      "settore": "Fashion & Design",
+      "descrizione": "StyleWorks è una casa di moda digitale che unisce tecnologia e creatività per sviluppare collezioni innovative e sostenibili."
+    },
+    "job_description": {
+      "ruolo": "Graphic Designer",
+      "livello": "Junior",
+      "responsabilità": [
+        "Creare materiali grafici per campagne marketing e social",
+        "Collaborare con il team creativo e i copywriter",
+        "Mantenere la coerenza visiva del brand su tutti i canali"
+      ],
+      "competenze_richieste": [
+        "Adobe Photoshop",
+        "Illustrator",
+        "Tipografia",
+        "Composizione visiva",
+        "Creatività"
+      ]
+    },
+    "tipi_quiz": ["creatività", "problem solving"],
+    "numero_di_domande": 10
+  }'

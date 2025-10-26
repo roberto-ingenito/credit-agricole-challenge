@@ -1,0 +1,387 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-cv",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "b9a1a060-a650-43ef-adf8-ccceeadd6fe0",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -2464,
+        -32
+      ],
+      "webhookId": "smart-recruit-cv-upload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$binary.file.mimeType}}",
+              "operation": "regex",
+              "value2": "application/(pdf|msword|vnd.openxmlformats)"
+            }
+          ]
+        }
+      },
+      "id": "33c1a3d3-3f88-4d83-85b6-470371b5d8a5",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2240,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\"success\": false, \"error\": \"Invalid file or missing consent\", \"details\": \"File must be PDF/Word, <5MB, and consent must be true\"} }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "7a6822be-d7e3-44b2-ad65-2b4575767d4d",
+      "name": "Response Error - Validation",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -2016,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "id": "76c3432b-2878-425a-96f3-c33efd34d9e0",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -2016,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const extractedText = items[0].json.text || '';\nconst candidateEmail = items[0].json.body?.candidate_email || 'unknown@email.com';\nconst filename = items[0].binary?.file?.fileName || 'cv.pdf';\n\nconst prompt = `# RUOLO\nSei un esperto AI specializzato nell'estrazione strutturata di informazioni da CV italiani e internazionali.\n\n# TASK\nAnalizza il seguente CV e estrai tutte le informazioni rilevanti in formato JSON strutturato.\n\n# ISTRUZIONI CRITICHE\n1. Estrai SOLO informazioni esplicitamente presenti nel testo\n2. Non inventare o inferire dati mancanti - usa null se un campo non è presente\n3. Per date ambigue, usa il formato \"YYYY-MM\" o \"YYYY\"\n4. Classifica le skill tecniche per categoria: programming_language, framework, database, tool, cloud, other\n5. Assegna proficiency (beginner/intermediate/advanced/expert) basandoti su: anni esperienza, ruoli, progetti\n6. Estrai sia hard skills che soft skills\n7. Calcola years_total_experience sommando tutte le esperienze lavorative\n8. Per education_level usa: high_school, bachelor, master, phd\n\n# SCHEMA JSON RICHIESTO (RISPETTA ESATTAMENTE QUESTA STRUTTURA)\n{\n  \"personal_info\": {\n    \"full_name\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string o null\",\n    \"location\": {\n      \"city\": \"string o null\",\n      \"country\": \"string o null\"\n    },\n    \"linkedin\": \"string o null\",\n    \"github\": \"string o null\",\n    \"portfolio\": \"string o null\"\n  },\n  \"summary\": \"stringa descrittiva del profilo (max 200 parole)\",\n  \"skills\": {\n    \"technical\": [\n      {\n        \"name\": \"string\",\n        \"category\": \"programming_language|framework|database|tool|cloud|other\",\n        \"proficiency\": \"beginner|intermediate|advanced|expert\",\n        \"years_experience\": \"numero o null\"\n      }\n    ],\n    \"soft_skills\": [\"array di stringhe\"],\n    \"languages\": [\n      {\n        \"language\": \"string\",\n        \"level\": \"A1|A2|B1|B2|C1|C2|native\"\n      }\n    ]\n  },\n  \"experience\": [\n    {\n      \"company\": \"string\",\n      \"role\": \"string\",\n      \"start_date\": \"YYYY-MM o YYYY\",\n      \"end_date\": \"YYYY-MM o YYYY o present\",\n      \"duration_months\": \"numero calcolato o null\",\n      \"description\": \"string\",\n      \"key_achievements\": [\"array di stringhe\"],\n      \"technologies\": [\"array di stringhe\"]\n    }\n  ],\n  \"education\": [\n    {\n      \"degree\": \"string\",\n      \"institution\": \"string\",\n      \"start_date\": \"YYYY-MM o YYYY o null\",\n      \"end_date\": \"YYYY-MM o YYYY o null\",\n      \"grade\": \"string o null\",\n      \"thesis\": \"string o null\"\n    }\n  ],\n  \"certifications\": [\n    {\n      \"name\": \"string\",\n      \"issuer\": \"string\",\n      \"date\": \"YYYY-MM o YYYY\",\n      \"credential_id\": \"string o null\"\n    }\n  ],\n  \"projects\": [\n    {\n      \"name\": \"string\",\n      \"description\": \"string\",\n      \"technologies\": [\"array\"],\n      \"url\": \"string o null\"\n    }\n  ],\n  \"extracted_scores\": {\n    \"years_total_experience\": \"numero\",\n    \"education_level\": \"high_school|bachelor|master|phd\",\n    \"n_certifications\": \"numero\",\n    \"n_projects\": \"numero\"\n  }\n}\n\n# TESTO DEL CV DA ANALIZZARE\n${extractedText}\n\n# OUTPUT RICHIESTO\nFornisci ESCLUSIVAMENTE il JSON valido, senza markdown, senza commenti, senza testo aggiuntivo prima o dopo.\nInizia direttamente con { e termina con }`;\n\nreturn [{\n  json: {\n    prompt: prompt,\n    candidate_email: candidateEmail,\n    filename: filename,\n    extracted_text_preview: extractedText.substring(0, 500)\n  }\n}];"
+      },
+      "id": "1c49a1d5-d25b-4281-8397-5190f24840ec",
+      "name": "Prepare LLM Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1792,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "qwen3:8b"
+            },
+            {
+              "name": "prompt",
+              "value": "={{$json.prompt}}"
+            },
+            {
+              "name": "stream",
+              "value": false
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "options",
+              "value": "={{ {\"temperature\": 0.1, \"num_predict\": 16384, \"num_ctx\": 8192} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a4c8ba01-a1d9-4893-bbde-202472318600",
+      "name": "Ollama LLM Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1568,
+        -224
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "F6rPQJKQix9aQq83",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  // Accedi all'item corrente\n  const ollamaResponse = $input.item.json.response;\n\n  // Verifica che response esista\n  if (!ollamaResponse) {\n    return {\n      success: false,\n      error: 'Response field is missing from Ollama output',\n      timestamp: new Date().toISOString()\n    };\n  }\n\n  // Se response è già un oggetto, non serve fare il parse\n  let extracted;\n  if (typeof ollamaResponse === 'string') {\n    // Cerca JSON nel testo\n    const jsonMatch = ollamaResponse.match(/\\{[\\s\\S]*\\}/);\n    if (!jsonMatch) {\n      return {\n        success: false,\n        error: 'No JSON found in Ollama response',\n        raw_response: ollamaResponse.substring(0, 200),\n        timestamp: new Date().toISOString()\n      };\n    }\n    extracted = JSON.parse(jsonMatch[0]);\n  } else {\n    // È già un oggetto\n    extracted = ollamaResponse;\n  }\n\n  // Prepara keywords per la ricerca\n  const searchKeywords = [\n    extracted.role || '',\n    ...(extracted.primary_skills || []),\n    ...(extracted.secondary_skills || [])\n  ].filter(k => k).join(' ');\n\n  return {\n    success: true,\n    original_query: $input.item.json.body?.query,\n    extracted_criteria: extracted,\n    search_keywords: searchKeywords,\n    timestamp: new Date().toISOString()\n  };\n\n} catch (error) {\n  return {\n    success: false,\n    error: error.message,\n    error_type: error.name,\n    timestamp: new Date().toISOString()\n  };\n}"
+      },
+      "id": "9fb99a9e-1484-4471-9a48-afb9e7d3b551",
+      "name": "Parse and Validate JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1312,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "a5e18e6d-5773-47e3-94a3-6501fdbaae5b",
+      "name": "Check Parsing Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\"success\": false, \"error\": \"CV parsing failed\", \"details\": $json.error, \"raw_preview\": $json.raw_response} }}",
+        "options": {
+          "responseCode": 422
+        }
+      },
+      "id": "01c7a92c-900f-4cb9-91b3-daccd0403a79",
+      "name": "Response Error - Parsing",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        -64
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "candidates",
+        "fields": "={{ Object.keys($json).join(',') }}",
+        "options": {
+          "dateFields": ""
+        }
+      },
+      "id": "ac5050e9-a918-4990-bd1b-d12e605974dd",
+      "name": "MongoDB Insert",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -352
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "mongoDb": {
+          "id": "wxTT5ALvByn25y7M",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const insertedDoc = items[0].json;\nconst candidateId = insertedDoc._id || insertedDoc.insertedId;\n\nreturn [{\n  json: {\n    success: true,\n    message: \"curriculum analyzed\",\n    candidate_id: candidateId,\n  }\n}];"
+      },
+      "id": "21b31639-b1a5-4c13-83df-dacf3a9d6339",
+      "name": "Prepare Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "id": "22f56e1e-9a5a-4112-875f-c311e99eaa22",
+      "name": "Response Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.extracted_criteria"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        -352
+      ],
+      "id": "bf5eeaf8-b546-4eaa-af47-75de4651880b",
+      "name": "Get only extracted criteria"
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Error - Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Prepare LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LLM Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ollama LLM Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama LLM Call": {
+      "main": [
+        [
+          {
+            "node": "Parse and Validate JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse and Validate JSON": {
+      "main": [
+        [
+          {
+            "node": "Check Parsing Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Parsing Success": {
+      "main": [
+        [
+          {
+            "node": "Get only extracted criteria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Error - Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB Insert": {
+      "main": [
+        [
+          {
+            "node": "Prepare Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Success Response": {
+      "main": [
+        [
+          {
+            "node": "Response Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get only extracted criteria": {
+      "main": [
+        [
+          {
+            "node": "MongoDB Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0f41c741239e7d8454e734c25d98231620c3dc2b62c93f64cb7348d589308a36"
+  }
+}
