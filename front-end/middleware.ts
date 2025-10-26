@@ -27,16 +27,18 @@ export function middleware(request: NextRequest) {
     const candidateRoutes = [
         '/dashboard/candidate',
         '/candidate',
+        '/quiz',                // Tutte le route quiz (incluso /quiz/[id])
     ];
-
 
     // Controlla se la route corrente è pubblica
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
+    // Se non c'è sessione e non è una route pubblica, redirect al landing
     if (!session && !isPublicRoute) {
         return NextResponse.redirect(new URL('/landing', request.url));
     }
 
+    // Permetti sempre accesso al landing
     if (pathname.startsWith("/landing")) {
         return NextResponse.next();
     }
