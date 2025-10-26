@@ -98,7 +98,7 @@
     {
       "parameters": {
         "operation": "insert",
-        "collection": "job-description",
+        "collection": "job_description",
         "fields": "={{ Object.keys($json).join(',') }}",
         "options": {}
       },

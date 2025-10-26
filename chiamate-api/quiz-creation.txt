@@ -1,4 +1,4 @@
-curl -X POST "http://localhost:5678/webhook-test/quiz-generation" \
+curl -X POST "http://roberto-ingenito.ddns.net:5678/webhook/quiz-generation" \
   -H "Content-Type: application/json" \
   -d '{
     "azienda": {

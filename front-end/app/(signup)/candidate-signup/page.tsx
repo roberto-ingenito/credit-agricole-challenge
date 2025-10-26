@@ -67,6 +67,12 @@ export default function CandidateSignupPage() {
 
             if (registerCandidate.fulfilled.match(result)) {
                 router.push('/dashboard/candidate');
+            } else {
+                addToast({
+                    title: "Registrazione fallita",
+                    description: "Errore durante la registrazione.",
+                    severity: "warning",
+                });
             }
         } catch (err) {
             addToast({

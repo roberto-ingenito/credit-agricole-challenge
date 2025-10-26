@@ -71,6 +71,12 @@ export default function HRCompanySignupPage() {
 
             if (registerCompany.fulfilled.match(result)) {
                 router.push('/dashboard/company');
+            } else {
+                addToast({
+                    title: "Registrazione fallita",
+                    description: "Errore durante la registrazione.",
+                    severity: "warning",
+                });
             }
         } catch (err) {
             addToast({

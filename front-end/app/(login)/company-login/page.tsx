@@ -37,6 +37,12 @@ export default function HRLoginPage() {
 
             if (loginCompany.fulfilled.match(result)) {
                 router.push('/dashboard/company');
+            } else {
+                addToast({
+                    title: "Accesso non riuscito",
+                    description: "Credenziali non valide. Riprova.",
+                    severity: "warning",
+                });
             }
         } catch (err) {
             addToast({

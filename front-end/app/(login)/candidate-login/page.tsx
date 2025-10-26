@@ -37,6 +37,12 @@ export default function CandidateLoginPage() {
 
             if (loginCandidate.fulfilled.match(result)) {
                 router.push('/dashboard/candidate');
+            } else {
+                addToast({
+                    title: "Accesso non riuscito",
+                    description: "Credenziali non valide. Riprova.",
+                    severity: "warning",
+                });
             }
         } catch (err) {
             addToast({
