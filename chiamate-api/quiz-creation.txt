@@ -2,6 +2,7 @@ curl -X POST "http://localhost:5678/webhook-test/quiz-generation" \
   -H "Content-Type: application/json" \
   -d '{
     "azienda": {
+      "id": "id-azienda",
       "nome": "StyleWorks",
       "settore": "Fashion & Design",
       "descrizione": "StyleWorks è una casa di moda digitale che unisce tecnologia e creatività per sviluppare collezioni innovative e sostenibili."
@@ -22,5 +23,6 @@ curl -X POST "http://localhost:5678/webhook-test/quiz-generation" \
         "Creatività"
       ]
     },
-    "tipo_quiz": "creativo"
+    "tipi_quiz": ["creatività", "problem solving"],
+    "numero_di_domande": 10
   }'
